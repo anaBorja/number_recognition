@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reconocimiento de Dígitos - Código Postal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 400px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #result {
+            margin-top: 20px;
+        }
+
+        #image-preview {
+            margin-top: 20px;
+            max-width: 200px;
+            max-height: 200px;
+            object-fit: contain;
+            margin-bottom: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Estilos de la pizarra */
+        #canvas {
+            border: 2px solid #000;
+            background-color: black;
+            cursor: crosshair;
+            margin-top: 20px;
+        }
+
+        #clear-btn {
+            background-color: #f44336;
+            margin-top: 10px;
+        }
+
+        #predict-btn {
+            background-color: #008CBA;
+            margin-top: 20px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Reconocimiento de Dígitos - Código Postal</h1>
+
+        <!-- Pizarra -->
+        <canvas id="canvas" width="280" height="280"></canvas>
+        
+        <!-- Botones para limpiar y predecir -->
+        <button id="clear-btn">Borrar Pizarra</button>
+        <button id="predict-btn">Predecir</button>
+
+        <!-- Resultado de la predicción -->
+        <div id="result" class="hidden">
+            <h2>Resultado de la Predicción:</h2>
+            <p id="prediction"></p>
+        </div>
+    </div>
+
+    <script>
+        const resultDiv = document.getElementById('result');
+        const predictionText = document.getElementById('prediction');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const clearBtn = document.getElementById('clear-btn');
+        const predictBtn = document.getElementById('predict-btn');
+        
+        let drawing = false;
+
+        // Configurar el canvas para pintar
+        canvas.addEventListener('mousedown', (e) => {
+            drawing = true;
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (drawing) {
+                ctx.lineTo(e.offsetX, e.offsetY);
+                ctx.strokeStyle = 'white'; // Cambiar el color a blanco para el trazo
+                ctx.lineWidth = 15; // Ajustar el grosor de las líneas
+                ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            drawing = false;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            drawing = false;
+        });
+
+        // Limpiar el canvas
+        clearBtn.addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpiar el lienzo
+            resultDiv.classList.add('hidden'); // Ocultar el resultado
+        });
+
+        // Enviar la imagen de la pizarra para predicción
+        predictBtn.addEventListener('click', async () => {
+            const canvasData = canvas.toDataURL('image/png'); // Obtener la imagen del canvas como DataURL
+            const formData = new FormData();
+            formData.append('image', canvasData);  // Agregar la imagen al formulario
+
+            // Hacer la petición al servidor para obtener la predicción
+            const response = await fetch('/predict', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                resultDiv.classList.remove('hidden');
+                predictionText.textContent = `El dígito predicho es: ${result.digit}`;
+            } else {
+                alert('Hubo un error al procesar la imagen.');
+            }
+        });
+
+    </script>
+</body>
+</html>
